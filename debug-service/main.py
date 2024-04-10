@@ -2,13 +2,17 @@ import asyncio
 import os
 import time
 from typing import Optional, Dict
-from fastapi import FastAPI, File, UploadFile, WebSocket, WebSocketDisconnect, Response
-from fastapi.responses import HTMLResponse, FileResponse, StreamingResponse
+from fastapi import FastAPI, File, UploadFile, WebSocket, WebSocketDisconnect, Request, Response
+from fastapi.responses import HTMLResponse, FileResponse
 import requests
 import uvicorn
 import logging
 import shutil
-
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.requests import Request
+from starlette.responses import Response
+import json
+from starlette.responses import StreamingResponse
 
 app = FastAPI()
 
@@ -34,6 +38,47 @@ uploaded_file_path = None
 logger = logging.getLogger('uvicorn.error')
 logging.basicConfig(level=logging.DEBUG)
 logger.setLevel(logging.DEBUG)
+
+class LoggingMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint):
+        start_time = time.time()
+
+        # Request details
+        request_details = {
+            "method": request.method,
+            "url": str(request.url),
+            "headers": dict(request.headers),
+        }
+        if request.body:
+            request_details["body"] = await request.body()
+
+        # Response details
+        response = await call_next(request)
+        end_time = time.time()
+
+        response_details = {
+            "headers": dict(response.headers),
+            "status_code": response.status_code,
+            "latency": end_time - start_time,
+            "client_ip": request.client.host,
+        }
+        if isinstance(response, StreamingResponse):
+            response_details["body"] = "StreamingResponse"
+        else:
+            response_details["body"] = response.body.decode('utf-8') if response.body else None
+
+        # Combine request and response details into one log
+        log_details = {
+            "request": request_details,
+            "response": response_details,
+        }
+
+        # Convert the log details into a JSON string and print it
+        logger.info(json.dumps(log_details, default=str))
+
+        return response
+
+app.add_middleware(LoggingMiddleware)
 
 @app.get("/healthz", status_code=200)
 def healthz():
@@ -63,9 +108,9 @@ async def proxy():
     return response.json()
 
 @app.post("/custom-headers")
-async def custom_headers(headers: Dict[str, str], response: Response):
-    for key, value in headers.items():
-        response.headers[key] = value
+async def custom_headers(custom_headers: Dict[str, str]):
+    response = Response()
+    response.headers.update(custom_headers)
     return response
 
 @app.get("/proxy-http")
