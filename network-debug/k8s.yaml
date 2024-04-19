@@ -1,0 +1,53 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: network-debug
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: network-debug
+  template:
+    metadata:
+      labels:
+        app: network-debug
+    spec:
+      containers:
+      - name: network-debug
+        image: ghcr.io/isala404/toolbox/network-debug:latest
+        ports:
+        - containerPort: 5600
+          name: tcp
+        - containerPort: 5700
+          name: udp
+          protocol: UDP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: network-debug-tcp
+spec:
+  selector:
+    app: network-debug
+  ports:
+  - port: 5600
+    targetPort: 5600
+    name: tcp
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: network-debug-udp
+spec:
+  selector:
+    app: network-debug
+  ports:
+  - port: 5700
+    targetPort: 5700
+    protocol: UDP
+    name: udp
+  type: LoadBalancer
+# telnet 0.0.0.0 5600 
+# echo "Hello World" | nc -u -w1 0.0.0.0 5700
