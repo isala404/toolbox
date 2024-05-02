@@ -84,27 +84,14 @@ paths:
               schema:
                 "$ref": "#/components/schemas/HTTPValidationError"
   "/proxy":
-    get:
-      summary: Proxy
-      operationId: proxy_proxy_get
-      responses:
-        '200':
-          description: Successful Response
-          content:
-            application/json:
-              schema: {}
-  "/custom-headers":
     post:
-      summary: Custom Headers
-      operationId: custom_headers_custom_headers_post
+      summary: Proxy
+      operationId: proxy_proxy_post
       requestBody:
         content:
           application/json:
             schema:
-              additionalProperties:
-                type: string
-              type: object
-              title: Headers
+              "$ref": "#/components/schemas/ProxyRequest"
         required: true
       responses:
         '200':
@@ -118,10 +105,35 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/HTTPValidationError"
-  "/proxy-http":
+  "/custom-headers":
+    post:
+      summary: Custom Headers
+      operationId: custom_headers_custom_headers_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties:
+                type: string
+              type: object
+              title: Custom Headers
+        required: true
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/HTTPValidationError"
+  "/proxy-http-bin":
     get:
       summary: Proxy Http
-      operationId: proxy_http_proxy_http_get
+      operationId: proxy_http_proxy_http_bin_get
       responses:
         '200':
           description: Successful Response
@@ -258,6 +270,22 @@ components:
           title: Detail
       type: object
       title: HTTPValidationError
+    ProxyRequest:
+      properties:
+        url:
+          type: string
+          title: Url
+        method:
+          type: string
+          title: Method
+        payload:
+          type: object
+          title: Payload
+      type: object
+      required:
+      - url
+      - method
+      title: ProxyRequest
     ValidationError:
       properties:
         loc:

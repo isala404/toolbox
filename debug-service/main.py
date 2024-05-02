@@ -4,6 +4,7 @@ import time
 from typing import Optional, Dict
 from fastapi import FastAPI, File, UploadFile, WebSocket, WebSocketDisconnect, Request, Response
 from fastapi.responses import HTMLResponse, FileResponse
+from pydantic import BaseModel
 import requests
 import uvicorn
 import logging
@@ -39,6 +40,7 @@ logger = logging.getLogger('uvicorn.error')
 logging.basicConfig(level=logging.DEBUG)
 logger.setLevel(logging.DEBUG)
 
+
 class LoggingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint):
         start_time = time.time()
@@ -65,7 +67,8 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         if isinstance(response, StreamingResponse):
             response_details["body"] = "StreamingResponse"
         else:
-            response_details["body"] = response.body.decode('utf-8') if response.body else None
+            response_details["body"] = response.body.decode(
+                'utf-8') if response.body else None
 
         # Combine request and response details into one log
         log_details = {
@@ -78,17 +81,21 @@ class LoggingMiddleware(BaseHTTPMiddleware):
 
         return response
 
+
 app.add_middleware(LoggingMiddleware)
+
 
 @app.get("/healthz", status_code=200)
 def healthz():
     return {"status": "OK"}
+
 
 @app.post("/echo")
 async def delay(request: dict = {"status": "OK"}, seconds: Optional[int] = None, status_code: int = 200):
     if seconds:
         time.sleep(seconds)
     return request, status_code
+
 
 @app.post("/log")
 def log(message: str, level: str):
@@ -102,10 +109,42 @@ def log(message: str, level: str):
         logger.debug(message)
     return {"message": message, "level": level}
 
-@app.get("/proxy")
-async def proxy():
-    response = requests.get("https://httpbin.org/anything")
-    return response.json()
+
+class ProxyRequest(BaseModel):
+    url: str
+    method: str
+    payload: dict = None
+
+
+@app.post("/proxy")
+async def proxy(proxy_request: ProxyRequest):
+    method = proxy_request.method.lower()
+    if method not in ['get', 'post', 'put', 'delete']:
+        raise HTTPException(status_code=400, detail="Invalid method")
+
+    try:
+        if method == 'get':
+            response = requests.get(
+                proxy_request.url, params=proxy_request.payload)
+        elif method == 'post':
+            response = requests.post(
+                proxy_request.url, json=proxy_request.payload)
+        elif method == 'put':
+            response = requests.put(
+                proxy_request.url, json=proxy_request.payload)
+        elif method == 'delete':
+            response = requests.delete(
+                proxy_request.url, json=proxy_request.payload)
+    except requests.exceptions.RequestException as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    try:
+        body = response.json()
+    except ValueError:
+        body = response.text
+
+    return {"response": {"headers": dict(response.headers), "body": body}}
+
 
 @app.post("/custom-headers")
 async def custom_headers(custom_headers: Dict[str, str]):
@@ -113,18 +152,22 @@ async def custom_headers(custom_headers: Dict[str, str]):
     response.headers.update(custom_headers)
     return response
 
-@app.get("/proxy-http")
+
+@app.get("/proxy-http-bin")
 async def proxy_http():
     response = requests.get("http://httpbin.org/anything")
     return response.json()
+
 
 @app.get("/html", response_class=HTMLResponse)
 def html():
     return html_content
 
+
 @app.get("/xml", response_class=HTMLResponse)
 def xml():
     return xml_content
+
 
 @app.post("/upload")
 async def upload(file: UploadFile = File(...)):
@@ -134,6 +177,7 @@ async def upload(file: UploadFile = File(...)):
         shutil.copyfileobj(file.file, buffer)
     return {"filename": file.filename}
 
+
 @app.get("/download")
 async def download():
     if uploaded_file_path:
@@ -141,11 +185,13 @@ async def download():
     else:
         return {"message": "No file uploaded"}
 
+
 @app.get("/stateless")
 async def stateless(seconds: Optional[int] = None):
     if seconds:
         await asyncio.sleep(seconds)
     return {"status": "OK", "headers": {"Connection": "close"}}
+
 
 @app.websocket("/websocket")
 async def websocket(websocket: WebSocket):
@@ -157,6 +203,7 @@ async def websocket(websocket: WebSocket):
     except WebSocketDisconnect:
         pass
 
+
 @app.get("/sse")
 async def sse():
     def event_stream():
@@ -165,20 +212,23 @@ async def sse():
             time.sleep(1)
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 
+
 @app.get("/crash")
 def crash():
     os._exit(1)
+
 
 @app.get("/shutdown")
 def shutdown():
     uvicorn.shutdown()
     os._exit(0)
 
+
 if __name__ == "__main__":
     port = 8080
     if "PORT" in os.environ:
         port = os.environ["PORT"]
-    
+
     if "STARTUP_DELAY" in os.environ:
         time.sleep(int(os.environ["STARTUP_DELAY"]))
 
