@@ -14,10 +14,10 @@ paths:
           content:
             application/json:
               schema: {}
-  "/echo":
+  "/debug":
     post:
-      summary: Delay
-      operationId: delay_echo_post
+      summary: Debug Endpoint
+      operationId: debug_endpoint_debug_post
       parameters:
       - name: seconds
         in: query
@@ -34,14 +34,6 @@ paths:
           type: integer
           default: 200
           title: Status Code
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              default:
-                status: OK
-              title: Request
       responses:
         '200':
           description: Successful Response
@@ -249,6 +241,52 @@ paths:
           content:
             application/json:
               schema: {}
+  "/fibonacci/{number}":
+    get:
+      summary: Fibonacci
+      operationId: fibonacci_fibonacci__number__get
+      parameters:
+      - name: number
+        in: path
+        required: true
+        schema:
+          type: integer
+          title: Number
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/HTTPValidationError"
+  "/sort":
+    get:
+      summary: Sort
+      operationId: sort_sort_get
+      parameters:
+      - name: "n"
+        in: query
+        required: true
+        schema:
+          type: integer
+          title: N
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/HTTPValidationError"
 components:
   schemas:
     Body_upload_upload_post:

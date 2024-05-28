@@ -1,8 +1,9 @@
 import asyncio
 import os
 import time
+import random
 from typing import Optional, Dict
-from fastapi import FastAPI, File, UploadFile, WebSocket, WebSocketDisconnect, Request, Response
+from fastapi import FastAPI, File, UploadFile, WebSocket, WebSocketDisconnect, Request, Response, HTTPException
 from fastapi.responses import HTMLResponse, FileResponse
 from pydantic import BaseModel
 import requests
@@ -90,11 +91,26 @@ def healthz():
     return {"status": "OK"}
 
 
-@app.post("/echo")
-async def delay(request: dict = {"status": "OK"}, seconds: Optional[int] = None, status_code: int = 200):
+@app.post("/debug")
+async def debug_endpoint(request: Request, seconds: Optional[int] = None, status_code: int = 200):
+    # Delay if 'seconds' is provided
     if seconds:
         time.sleep(seconds)
-    return request, status_code
+
+    # Extract all necessary information from the request
+    request_info = {
+        "headers": dict(request.headers),
+        "query_params": dict(request.query_params),
+        "path_params": request.path_params,
+        "cookies": request.cookies,
+        "client": request.client,
+        "method": request.method,
+        "url": str(request.url),
+        "base_url": str(request.base_url),
+        "body": await request.json() if request.headers.get("content-type") == "application/json" else None
+    }
+
+    return request_info, status_code
 
 
 @app.post("/log")
@@ -222,6 +238,35 @@ def crash():
 def shutdown():
     uvicorn.shutdown()
     os._exit(0)
+
+
+# Fibonacci endpoint
+@app.get("/fibonacci/{number}")
+def fibonacci(number: int):
+    def fib(n):
+        if n <= 0:
+            return 0
+        elif n == 1:
+            return 1
+        else:
+            return fib(n-1) + fib(n-2)
+
+    if number < 0:
+        raise HTTPException(status_code=400, detail="Number must be non-negative")
+
+    result = fib(number)
+    return {"number": number, "fibonacci": result}
+
+# Sort endpoint
+@app.get("/sort")
+def sort(n: int):
+    if n <= 0:
+        raise HTTPException(status_code=400, detail="Number of elements must be positive")
+
+    random_array = [random.randint(0, 100) for _ in range(n)]
+    sorted_array = sorted(random_array)
+
+    return {"random_array": random_array, "sorted_array": sorted_array}
 
 
 if __name__ == "__main__":
