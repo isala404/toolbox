@@ -92,7 +92,7 @@ def healthz():
 
 
 @app.post("/debug")
-async def debug_endpoint(request: Request, seconds: Optional[int] = None, status_code: int = 200):
+async def debug_endpoint(request: Request, response: Response, seconds: Optional[int] = None, status_code: int = 200) :
     # Delay if 'seconds' is provided
     if seconds:
         time.sleep(seconds)
@@ -109,8 +109,9 @@ async def debug_endpoint(request: Request, seconds: Optional[int] = None, status
         "base_url": str(request.base_url),
         "body": await request.json() if request.headers.get("content-type") == "application/json" else None
     }
+    response.status_code = status_code
 
-    return request_info, status_code
+    return request_info
 
 
 @app.post("/log")
@@ -263,10 +264,10 @@ def sort(n: int):
     if n <= 0:
         raise HTTPException(status_code=400, detail="Number of elements must be positive")
 
-    random_array = [random.randint(0, 100) for _ in range(n)]
-    sorted_array = sorted(random_array)
+    array = [1] * (10**int(n/3)) + [3] * (10**int(n/3)) + [0] * (10**int(n/3))
+    array = sorted(array)
 
-    return {"random_array": random_array, "sorted_array": sorted_array}
+    return {"sorted": True}
 
 
 if __name__ == "__main__":
