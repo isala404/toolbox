@@ -15,6 +15,10 @@ from starlette.requests import Request
 from starlette.responses import Response
 import json
 from starlette.responses import StreamingResponse
+import psutil
+import signal
+from starlette.types import ASGIApp, Receive, Scope, Send
+
 
 app = FastAPI()
 
@@ -83,7 +87,29 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         return response
 
 
+class ResetMiddleware:
+    def __init__(self, app: ASGIApp):
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send):
+        if scope["type"] == "http":
+            original_send = send
+
+            async def custom_send(message):
+                if message["type"] == "http.response.start" and scope.get("reset_connection", False):
+                    headers = message.get("headers", [])
+                    headers.append((b"Connection", b"close"))
+                    message["headers"] = headers
+                await original_send(message)
+
+            await self.app(scope, receive, custom_send)
+        else:
+            await self.app(scope, receive, send)
+
 app.add_middleware(LoggingMiddleware)
+app.add_middleware(ResetMiddleware)
+
+
 
 
 @app.get("/healthz", status_code=200)
@@ -241,41 +267,88 @@ def shutdown():
     os._exit(0)
 
 
-# Fibonacci endpoint
-@app.get("/fibonacci/{number}")
-def fibonacci(number: int):
-    def fib(n):
-        if n <= 0:
-            return 0
-        elif n == 1:
-            return 1
-        else:
-            return fib(n-1) + fib(n-2)
+@app.get("/stress/cpu")
+async def stress_cpu(cpu_percent: int, duration: int):
+    if cpu_percent < 0 or cpu_percent > 100:
+        raise HTTPException(status_code=400, detail="CPU percentage must be between 0 and 100")
+    if duration < 0:
+        raise HTTPException(status_code=400, detail="Duration must be non-negative")
 
-    if number < 0:
-        raise HTTPException(status_code=400, detail="Number must be non-negative")
+    def cpu_load():
+        end_time = time.time() + duration
+        while time.time() < end_time:
+            if psutil.cpu_percent(interval=0.1) < cpu_percent:
+                pass  # This will use CPU
 
-    result = fib(number)
-    return {"number": number, "fibonacci": result}
+    await asyncio.to_thread(cpu_load)
+    return {"message": f"CPU stressed at {cpu_percent}% for {duration} seconds"}
 
-# Sort endpoint
-@app.get("/sort")
-def sort(n: int):
-    if n <= 0:
-        raise HTTPException(status_code=400, detail="Number of elements must be positive")
+# New memory stress endpoint
+@app.get("/stress/memory")
+async def stress_memory(memory_percent: int, duration: int):
+    if memory_percent < 0 or memory_percent > 100:
+        raise HTTPException(status_code=400, detail="Memory percentage must be between 0 and 100")
+    if duration < 0:
+        raise HTTPException(status_code=400, detail="Duration must be non-negative")
 
-    array = [1] * (10**int(n/3)) + [3] * (10**int(n/3)) + [0] * (10**int(n/3))
-    array = sorted(array)
+    total_memory = psutil.virtual_memory().total
+    memory_to_use = int(total_memory * memory_percent / 100)
 
-    return {"sorted": True}
+    def memory_load():
+        data = bytearray(memory_to_use)
+        time.sleep(duration)
+        del data
 
+    await asyncio.to_thread(memory_load)
+    return {"message": f"Memory stressed at {memory_percent}% for {duration} seconds"}
+
+@app.get("/reset")
+async def reset(request: Request, do: bool = False):
+    if do:
+        request.scope["reset_connection"] = True
+        return Response(content="Connection will be reset", status_code=200, headers={"Connection": "close"})
+    return {"message": "Reset not performed"}
+
+server = None
+should_exit = asyncio.Event()
+
+# Graceful shutdown handler
+async def graceful_shutdown(signum, frame):
+    print("Received shutdown signal, closing all connections...")
+    global server
+    if server:
+        await server.shutdown()
+        print("All connections closed. Waiting 5 seconds for FIN ACK...")
+        await asyncio.sleep(5)  # Wait for 5 seconds after closing connections
+    should_exit.set()
+
+# Function to start the server
+async def start_server():
+    global server
+    config = uvicorn.Config(app, host="0.0.0.0", port=8080)
+    server = uvicorn.Server(config)
+    
+    # Setup signal handlers
+    for sig in (signal.SIGTERM, signal.SIGINT):
+        signal.signal(sig, lambda s, f: asyncio.create_task(graceful_shutdown(s, f)))
+    
+    # Start the server
+    await server.serve()
 
 if __name__ == "__main__":
     port = 8080
     if "PORT" in os.environ:
-        port = os.environ["PORT"]
+        port = int(os.environ["PORT"])
 
     if "STARTUP_DELAY" in os.environ:
         time.sleep(int(os.environ["STARTUP_DELAY"]))
 
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    loop = asyncio.get_event_loop()
+    
+    try:
+        loop.run_until_complete(start_server())
+    except KeyboardInterrupt:
+        pass
+    finally:
+        loop.run_until_complete(graceful_shutdown(None, None))
+        loop.close()

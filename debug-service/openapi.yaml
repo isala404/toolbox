@@ -241,17 +241,23 @@ paths:
           content:
             application/json:
               schema: {}
-  "/fibonacci/{number}":
+  "/stress/cpu":
     get:
-      summary: Fibonacci
-      operationId: fibonacci_fibonacci__number__get
+      summary: Stress Cpu
+      operationId: stress_cpu_stress_cpu_get
       parameters:
-      - name: number
-        in: path
+      - name: cpu_percent
+        in: query
         required: true
         schema:
           type: integer
-          title: Number
+          title: Cpu Percent
+      - name: duration
+        in: query
+        required: true
+        schema:
+          type: integer
+          title: Duration
       responses:
         '200':
           description: Successful Response
@@ -264,17 +270,47 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/HTTPValidationError"
-  "/sort":
+  "/stress/memory":
     get:
-      summary: Sort
-      operationId: sort_sort_get
+      summary: Stress Memory
+      operationId: stress_memory_stress_memory_get
       parameters:
-      - name: "n"
+      - name: memory_percent
         in: query
         required: true
         schema:
           type: integer
-          title: N
+          title: Memory Percent
+      - name: duration
+        in: query
+        required: true
+        schema:
+          type: integer
+          title: Duration
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema: {}
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/HTTPValidationError"
+  "/reset":
+    get:
+      summary: Reset
+      operationId: reset_reset_get
+      parameters:
+      - name: do
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
+          title: Do
       responses:
         '200':
           description: Successful Response

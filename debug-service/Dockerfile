@@ -4,7 +4,7 @@ FROM python:3.10-alpine
 # Set the working directory in the container to /app
 WORKDIR /app
 
-RUN apk add --no-cache curl bind-tools net-tools jq inetutils-telnet
+RUN apk add --no-cache curl bind-tools net-tools jq inetutils-telnet gcc python3-dev musl-dev linux-headers
 
 # Add the current directory contents into the container at /app
 ADD . /app
