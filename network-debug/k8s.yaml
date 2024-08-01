@@ -22,6 +22,8 @@ spec:
         - containerPort: 5700
           name: udp
           protocol: UDP
+        - containerPort: 5800
+          name: rst
 ---
 apiVersion: v1
 kind: Service
@@ -51,3 +53,16 @@ spec:
   type: LoadBalancer
 # telnet 0.0.0.0 5600 
 # echo "Hello World" | nc -u -w1 0.0.0.0 5700
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: network-debug-rst
+spec:
+  selector:
+    app: network-debug
+  ports:
+  - port: 5800
+    targetPort: 5800
+    name: rst
+  type: ClusterIP
