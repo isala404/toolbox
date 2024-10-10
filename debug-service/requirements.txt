@@ -1,5 +1,5 @@
-fastapi
-uvicorn
-requests
-python-multipart
-psutil
+fastapi==0.111.1
+uvicorn==0.30.3
+requests==2.32.3
+python-multipart==0.0.9
+psutil==6.0.0
