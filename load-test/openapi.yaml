@@ -1,0 +1,59 @@
+openapi: 3.0.0
+info:
+  title: Rust Status Service
+  version: 1.0.0
+paths:
+  "/200":
+    get:
+      summary: OK Status
+      operationId: getOkStatus
+      responses:
+        '200':
+          description: OK
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: OK
+  "/400":
+    get:
+      summary: Bad Request Status
+      operationId: getBadRequestStatus
+      responses:
+        '400':
+          description: Bad Request
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Bad Request
+  "/500":
+    get:
+      summary: Internal Server Error Status
+      operationId: getInternalServerErrorStatus
+      responses:
+        '500':
+          description: Internal Server Error
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Internal Server Error
+  "/{any}":
+    get:
+      summary: Not Found Status
+      operationId: getNotFoundStatus
+      parameters:
+        - name: any
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '404':
+          description: Not Found
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Not Found
