@@ -1,7 +1,6 @@
 import asyncio
 import os
 import time
-import random
 from typing import Optional, Dict
 from fastapi import FastAPI, File, UploadFile, WebSocket, WebSocketDisconnect, Request, Response, HTTPException
 from fastapi.responses import HTMLResponse, FileResponse
@@ -110,12 +109,17 @@ app.add_middleware(LoggingMiddleware)
 app.add_middleware(ResetMiddleware)
 
 
-
+terminating = False
 
 @app.get("/healthz", status_code=200)
 def healthz():
     return {"status": "OK"}
 
+@app.get("/readiness", status_code=200)
+def readiness():
+    if terminating:
+        raise HTTPException(status_code=503, detail="Server is shutting down")
+    return {"status": "OK"}
 
 @app.post("/debug")
 async def debug_endpoint(request: Request, response: Response, seconds: Optional[int] = None, status_code: int = 200) :
@@ -316,6 +320,8 @@ should_exit = asyncio.Event()
 async def graceful_shutdown(signum, frame):
     print("Received shutdown signal, closing all connections...")
     global server
+    global terminating
+    terminating = True
     if server:
         await server.shutdown()
         print("All connections closed. Waiting 5 seconds for FIN ACK...")
