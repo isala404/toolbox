@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Frontend</title>
+    <style>
+        body { padding: 20px; font-family: Arial, sans-serif; }
+        .response { margin-top: 20px; white-space: pre; }
+        .button-container { margin: 20px 0; }
+    </style>
+</head>
+<body>
+    <h1>API Test Interface</h1>
+    
+    <div class="button-container">
+        <button id="getSampleButton">Get Sample Data</button>
+    </div>
+
+    <div class="response" id="response"></div>
+
+    <script>
+        document.getElementById('getSampleButton').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/api/sample');
+                const data = await response.json();
+                document.getElementById('response').textContent = JSON.stringify(data, null, 2);
+            } catch (err) {
+                document.getElementById('response').textContent = 'Error: ' + err.message;
+            }
+        });
+    </script>
+</body>
+</html>
