@@ -1,0 +1,47 @@
+openapi: 3.0.0
+info:
+  title: Multi Framework Debug Service
+  version: 1.0.0
+  description: API for health check and echo service for multiple frameworks
+paths:
+  /healthz:
+    get:
+      summary: Health Check
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  service:
+                    type: string
+                    example: python
+  /echo:
+    post:
+      summary: Echo Service
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Echoes back the request body
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  service:
+                    type: string
+                    example: python
+                  echo:
+                    type: object
+                    additionalProperties: true

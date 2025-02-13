@@ -1,0 +1,53 @@
+schemaVersion: 1.1
+
+endpoints:
+  - name: python-service
+    displayName: Python Service
+    service:
+      basePath: /
+      port: 8081
+    type: REST
+    networkVisibilities: 
+      - Public
+      - Organization
+    schemaFilePath: openapi.yaml
+  - name: go-service
+    displayName: Go Service
+    service:
+      basePath: /
+      port: 8082
+    type: REST
+    networkVisibilities: 
+      - Public
+      - Organization
+    schemaFilePath: openapi.yaml
+  - name: node-service
+    displayName: Node Service
+    service:
+      basePath: /
+      port: 8083
+    type: REST
+    networkVisibilities: 
+      - Public
+      - Organization
+    schemaFilePath: openapi.yaml
+  - name: ballerina-service
+    displayName: Ballerina Service
+    service:
+      basePath: /
+      port: 8084
+    type: REST
+    networkVisibilities: 
+      - Public
+      - Organization
+    schemaFilePath: openapi.yaml
+  - name: java-service
+    displayName: Java Service
+    service:
+      basePath: /
+      port: 8085
+    type: REST
+    networkVisibilities: 
+      - Public
+      - Organization
+    schemaFilePath: openapi.yaml
