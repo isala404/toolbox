@@ -46,12 +46,22 @@ WORKDIR /app/ballerina
 COPY ballerina/ .
 RUN bal build
 
+# Set up health check service
+WORKDIR /app/health-check
+COPY health-check/package.json .
+RUN npm install
+COPY health-check/index.js .
+
 # Copy start script
 WORKDIR /app
 COPY start-services.sh .
 RUN chmod +x start-services.sh
 
-# Create a non-root user
+# Fix permissions for Ballerina
+RUN chmod -R 755 /usr/lib/ballerina
+
+# Create a non-root user and set permissions
+RUN chown -R 10014:10014 /app
 USER 10014
 
 CMD ["./start-services.sh"] 
