@@ -1,0 +1,71 @@
+openapi: 3.0.0
+info:
+  title: Kubernetes Pod Bandwidth Tester API
+  version: 1.0.0
+  description: |
+    API for testing ingress (download) and egress (upload) bandwidth 
+    of the Kubernetes pod it's running in.
+paths:
+  /test-ingress:
+    get:
+      summary: Test Ingress (Download) Speed
+      description: Returns the download speed in Mbps.
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  download_speed_mbps:
+                    type: number
+                    format: float
+                    description: Download speed in Megabits per second.
+                    example: 123.45
+  /test-egress:
+    get:
+      summary: Test Egress (Upload) Speed
+      description: Returns the upload speed in Mbps.
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  upload_speed_mbps:
+                    type: number
+                    format: float
+                    description: Upload speed in Megabits per second.
+                    example: 67.89
+  /test-all:
+    get:
+      summary: Test All (Download, Upload, Ping)
+      description: Returns download speed (Mbps), upload speed (Mbps), and ping (ms).
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  download_speed_mbps:
+                    type: number
+                    format: float
+                    description: Download speed in Megabits per second.
+                    example: 123.45
+                  upload_speed_mbps:
+                    type: number
+                    format: float
+                    description: Upload speed in Megabits per second.
+                    example: 67.89
+                  ping_ms:
+                    type: number
+                    format: float
+                    description: Ping time in milliseconds.
+                    example: 10.5
+components:
+  schemas: {} 

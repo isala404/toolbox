@@ -1,0 +1,13 @@
+schemaVersion: 1.1
+
+endpoints:
+  - name: bandwidth-test
+    displayName: Bandwidth Test
+    service:
+      basePath: /
+      port: 8000
+    type: REST
+    networkVisibilities: 
+      - Public
+      - Organization
+    schemaFilePath: openapi.yaml
