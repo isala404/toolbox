@@ -1,0 +1,221 @@
+openapi: 3.0.0
+info:
+  title: Resource Stress Testing API
+  version: 1.0.0
+  description: API for stress testing system resources (CPU and Memory)
+
+servers:
+  - url: /
+    description: Default server
+
+paths:
+  /:
+    get:
+      summary: Get API information
+      description: Returns basic information about the API and available endpoints
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Resource Stress Testing API"
+                  endpoints:
+                    type: array
+                    items:
+                      type: string
+                    example: ["/stress-cpu", "/stress-memory", "/stress-both"]
+
+  /stress-cpu:
+    post:
+      summary: Stress CPU
+      description: Stress CPU to specified percentage for given duration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StressRequest'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StressResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPError'
+
+  /stress-memory:
+    post:
+      summary: Stress Memory
+      description: Stress memory to specified percentage for given duration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StressRequest'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StressResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPError'
+
+  /stress-both:
+    post:
+      summary: Stress Both CPU and Memory
+      description: Stress both CPU and memory to specified percentage for given duration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StressRequest'
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StressResponse'
+        '422':
+          description: Validation Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HTTPError'
+
+  /system-info:
+    get:
+      summary: Get System Information
+      description: Get current system resource information
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cpu_cores:
+                    type: integer
+                    description: Number of CPU cores
+                    example: 8
+                  cpu_usage_percent:
+                    type: number
+                    description: Current CPU usage percentage
+                    example: 15.5
+                  total_memory_gb:
+                    type: number
+                    description: Total system memory in GB
+                    example: 16.0
+                  available_memory_gb:
+                    type: number
+                    description: Available memory in GB
+                    example: 8.5
+                  memory_usage_percent:
+                    type: number
+                    description: Current memory usage percentage
+                    example: 47.3
+
+components:
+  schemas:
+    StressRequest:
+      type: object
+      required:
+        - percentage
+        - duration
+      properties:
+        percentage:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: Percentage of resource to stress (0-100)
+          example: 50.0
+        duration:
+          type: integer
+          minimum: 1
+          description: Duration in seconds
+          example: 30
+
+    StressResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Response message
+          example: "CPU stressed at 50.0% for 30 seconds"
+        percentage:
+          type: number
+          description: Stress percentage used
+          example: 50.0
+        duration:
+          type: integer
+          description: Duration in seconds
+          example: 30
+        status:
+          type: string
+          description: Operation status
+          example: "completed"
+
+    HTTPError:
+      type: object
+      properties:
+        detail:
+          type: string
+          description: Error detail message
+          example: "Error stressing CPU: Some error occurred"
+
+    ValidationError:
+      type: object
+      properties:
+        detail:
+          type: array
+          items:
+            type: object
+            properties:
+              loc:
+                type: array
+                items:
+                  anyOf:
+                    - type: string
+                    - type: integer
+              msg:
+                type: string
+              type:
+                type: string 
